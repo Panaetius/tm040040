@@ -1,4 +1,7 @@
-use crate::register::{Bank0, Register};
+use crate::{
+    error::SensorError,
+    register::{Bank0, Register},
+};
 
 pub(crate) trait Bitfield {
     const BITMASK: u8;
@@ -31,6 +34,17 @@ impl Bitfield for PowerMode {
         (self as u8) << 1
     }
 }
+impl TryFrom<u8> for PowerMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Normal),
+            1 => Ok(Self::Shutdown),
+            2 => Ok(Self::Sleep),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -61,6 +75,16 @@ impl Bitfield for PositionMode {
     const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG1;
     fn bits(self) -> u8 {
         (self as u8) << 1
+    }
+}
+impl TryFrom<u8> for PositionMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Relative),
+            1 => Ok(Self::Absolute),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
     }
 }
 

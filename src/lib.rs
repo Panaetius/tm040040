@@ -55,6 +55,12 @@ where
         self.read_reg(&Bank0::FIRMWARE_ID)
     }
 
+    pub fn power_mode(&mut self) -> Result<PowerMode, Error<E>> {
+        let bits = self.read_reg(&Bank0::SYS_CONFIG1)? >> 1;
+        let mode = PowerMode::try_from(bits)?;
+        Ok(mode)
+    }
+
     pub fn set_power_mode(&mut self, power_mode: PowerMode) -> Result<(), Error<E>> {
         self.write_reg(&Bank0::SYS_CONFIG1, power_mode as u8)
     }
@@ -92,6 +98,11 @@ where
     }
     pub fn set_feed_mode(&mut self, fd: FeedMode) -> Result<(), Error<E>> {
         self.update_reg(fd)
+    }
+    pub fn position_mode(&mut self) -> Result<PositionMode, Error<E>> {
+        let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & 0x0000_0010;
+        let mode = PositionMode::try_from(bits)?;
+        Ok(mode)
     }
 
     pub fn set_position_mode(&mut self, pos: PositionMode) -> Result<(), Error<E>> {
