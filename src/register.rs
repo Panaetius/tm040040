@@ -1,4 +1,5 @@
-#[allow(non_camel_case_types)]
+#![allow(non_camel_case_types)]
+#![allow(unused)]
 
 pub(crate) trait Register {
     fn addr(&self) -> u8;
