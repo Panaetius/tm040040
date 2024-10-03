@@ -2,15 +2,15 @@
 
 use core::fmt::Debug;
 
-use crate::config::PowerMode;
 use crate::register::Bank0;
-use config::{
-    Bitfield, FeedMode, FilterMode, GlideExtendMode, IntelliMouseMode, PositionMode, ScrollMode,
-    TapMode, XYEnable, XYInverted, XYSwapped,
-};
+use config::Bitfield;
 use embedded_hal::i2c::I2c;
 
 pub use crate::config::Address;
+pub use crate::config::{
+    FeedMode, FilterMode, GlideExtendMode, IntelliMouseMode, PositionMode, PowerMode, ScrollMode,
+    TapMode, XYEnable, XYInverted, XYSwapped,
+};
 pub use crate::error::Error;
 use crate::register::Register;
 
