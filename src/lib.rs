@@ -62,6 +62,7 @@ where
         let pb0 = self.read_reg(&Bank0::PACKET_BYTE0)?;
         let pb1 = self.read_reg(&Bank0::PACKET_BYTE1)?;
         let pb2 = self.read_reg(&Bank0::PACKET_BYTE2)?;
+        self.clear_flags()?;
 
         let primary_pressed = (pb0 & 0x1) != 0;
         let secondary_pressed = (pb0 & 0x2) != 0;
@@ -144,5 +145,9 @@ where
             let value = (current & !BF::BITMASK) | (value.bits() & BF::BITMASK);
             self.write_reg(&BF::REGISTER, value)
         }
+    }
+
+    fn clear_flags(&mut self) -> Result<(), Error<E>> {
+        self.write_reg(&Bank0::STATUS1, 0x00)
     }
 }
