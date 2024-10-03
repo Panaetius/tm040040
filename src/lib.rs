@@ -5,8 +5,8 @@ use core::fmt::Debug;
 use crate::config::PowerMode;
 use crate::register::Bank0;
 use config::{
-    Bitfield, FilterMode, GlideExtendMode, IntelliMouseMode, PositionMode, ScrollMode, TapMode,
-    XYEnable, XYInverted, XYSwapped,
+    Bitfield, FeedMode, FilterMode, GlideExtendMode, IntelliMouseMode, PositionMode, ScrollMode,
+    TapMode, XYEnable, XYInverted, XYSwapped,
 };
 use embedded_hal::i2c::I2c;
 
@@ -87,6 +87,9 @@ where
             x_delta,
             y_delta,
         })
+    }
+    pub fn set_feed_mode(&mut self, fd: FeedMode) -> Result<(), Error<E>> {
+        self.update_reg(fd)
     }
 
     pub fn set_position_mode(&mut self, pos: PositionMode) -> Result<(), Error<E>> {

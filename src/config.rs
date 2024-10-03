@@ -34,6 +34,22 @@ impl Bitfield for PowerMode {
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum FeedMode {
+    #[default]
+    Enabled = 1,
+    NoFeed = 0,
+}
+impl Bitfield for FeedMode {
+    const BITMASK: u8 = 0b0000_0001;
+    type Reg = Bank0;
+    const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG1;
+    fn bits(self) -> u8 {
+        self as u8
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum PositionMode {
     #[default]
     Relative = 0,
