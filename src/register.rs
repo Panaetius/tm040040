@@ -7,7 +7,7 @@ pub(crate) trait Register {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum Bank0 {
+pub enum Bank0 {
     FIRMWARE_ID = 0x00,
     FIRMWARE_VERSION = 0x01,
     STATUS1 = 0x02,

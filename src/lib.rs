@@ -2,7 +2,7 @@
 
 use core::fmt::Debug;
 
-use crate::register::Bank0;
+pub use crate::register::Bank0;
 use config::Bitfield;
 use embedded_hal::i2c::I2c;
 
@@ -133,7 +133,7 @@ where
         self.update_reg(gem)
     }
 
-    fn read_reg<R: Register>(&mut self, reg: &R) -> Result<u8, Error<E>> {
+    pub fn read_reg<R: Register>(&mut self, reg: &R) -> Result<u8, Error<E>> {
         let mut buffer = [0u8];
         self.i2c
             .write_read(self.address as u8, &[reg.addr()], &mut buffer)
