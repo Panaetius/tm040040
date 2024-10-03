@@ -43,6 +43,7 @@ where
 
         //TODO: verify device id
         me.set_power_mode(PowerMode::default())?;
+        me.clear_flags()?;
         Ok(me)
     }
 
