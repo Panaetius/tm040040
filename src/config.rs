@@ -11,6 +11,12 @@ pub(crate) trait Bitfield {
     fn bits(self) -> u8;
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum Mask {
+    Read = 0xA0,
+    Write = 0x80,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum Address {
     #[default]
@@ -103,6 +109,16 @@ impl Bitfield for FilterMode {
         (self as u8) << 2
     }
 }
+impl TryFrom<u8> for FilterMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Enable),
+            1 => Ok(Self::Disable),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -119,6 +135,18 @@ impl Bitfield for XYEnable {
     const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG1;
     fn bits(self) -> u8 {
         (self as u8) << 3
+    }
+}
+impl TryFrom<u8> for XYEnable {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Enabled),
+            1 => Ok(Self::XDisabled),
+            2 => Ok(Self::YDisabled),
+            3 => Ok(Self::XYDisabled),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
     }
 }
 
@@ -139,6 +167,18 @@ impl Bitfield for XYInverted {
         (self as u8) << 6
     }
 }
+impl TryFrom<u8> for XYInverted {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Normal),
+            1 => Ok(Self::XInverted),
+            2 => Ok(Self::YInverted),
+            3 => Ok(Self::XYInverted),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -153,6 +193,16 @@ impl Bitfield for IntelliMouseMode {
     const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG2;
     fn bits(self) -> u8 {
         self as u8
+    }
+}
+impl TryFrom<u8> for IntelliMouseMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Disabled),
+            1 => Ok(Self::Enabled),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
     }
 }
 
@@ -172,6 +222,17 @@ impl Bitfield for TapMode {
         (self as u8) << 1
     }
 }
+impl TryFrom<u8> for TapMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Enabled),
+            1 => Ok(Self::AllTapsDisable),
+            2 => Ok(Self::SecondaryTapDisable),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -186,6 +247,16 @@ impl Bitfield for ScrollMode {
     const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG2;
     fn bits(self) -> u8 {
         (self as u8) << 3
+    }
+}
+impl TryFrom<u8> for ScrollMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Enabled),
+            1 => Ok(Self::Disabled),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
     }
 }
 
@@ -204,6 +275,16 @@ impl Bitfield for GlideExtendMode {
         (self as u8) << 4
     }
 }
+impl TryFrom<u8> for GlideExtendMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Enabled),
+            1 => Ok(Self::Disabled),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
@@ -218,5 +299,15 @@ impl Bitfield for XYSwapped {
     const REGISTER: Self::Reg = Self::Reg::FEED_CONFIG1;
     fn bits(self) -> u8 {
         (self as u8) << 7
+    }
+}
+impl TryFrom<u8> for XYSwapped {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::Normal),
+            1 => Ok(Self::Swapped),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
     }
 }
