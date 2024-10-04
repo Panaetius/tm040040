@@ -3,11 +3,13 @@ name = "tm040040"
 version = "0.1.0"
 edition = "2021"
 authors = ["Ralf Grubenmann <ralf.grubenmann@protonmail.com>"]
-description = "An embedded-hal driver for the TM040040 Cirque Circle Trackpad"
+description = "An embedded-hal driver for the TM040040 Cirque Circle touchpad (and Pinnacle touchpads in general)"
+readme = "README.md"
 repository = "https://github.com/Panaetius/tm040040"
+homepage = "https://github.com/Panaetius/tm040040"
 license = "AGPL"
-keywords = ["trackpad"]
-categories = ["embedded", "hardware-support", "no-st"]
+keywords = ["touchpad"]
+categories = ["embedded", "hardware-support", "no-st" ]
 
 [dependencies]
 embedded-hal = "1.0.0"
