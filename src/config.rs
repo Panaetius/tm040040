@@ -67,6 +67,16 @@ impl Bitfield for FeedMode {
         self as u8
     }
 }
+impl TryFrom<u8> for FeedMode {
+    type Error = SensorError;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::NoFeed),
+            1 => Ok(Self::Enabled),
+            _ => Err(SensorError::InvalidDiscriminant),
+        }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
