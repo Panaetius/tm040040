@@ -19,9 +19,7 @@
 //!
 //! use tm040040::{Address, FeedMode, Tm040040, XYInverted};
 //! fn main() -> Result<()> {
-//!
 //!     let peripherals = Peripherals::take().unwrap();
-//!
 //!
 //!     let sda = peripherals.pins.gpio10;
 //!     let scl = peripherals.pins.gpio8;
