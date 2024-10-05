@@ -59,6 +59,11 @@ mod config;
 mod error;
 mod register;
 
+mod private {
+
+    pub trait Sealed {}
+}
+
 const PINNACLE_X_LOWER: u16 = 128;
 const PINNACLE_Y_LOWER: u16 = 64;
 const PINNACLE_X_UPPER: u16 = 1920;
@@ -93,17 +98,21 @@ pub struct AbsoluteData {
     pub z_level: u8,
 }
 
-pub trait FeedState {}
+pub trait FeedState: private::Sealed {}
 pub struct FeedEnabled;
 pub struct NoFeed;
 impl FeedState for FeedEnabled {}
+impl private::Sealed for FeedEnabled {}
 impl FeedState for NoFeed {}
+impl private::Sealed for NoFeed {}
 
-pub trait PositionReportingMode {}
+pub trait PositionReportingMode: private::Sealed {}
 pub struct Relative;
 pub struct Absolute;
 impl PositionReportingMode for Relative {}
+impl private::Sealed for Relative {}
 impl PositionReportingMode for Absolute {}
+impl private::Sealed for Absolute {}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Tm040040<I2C, PositionMode: PositionReportingMode, Feed: FeedState> {
