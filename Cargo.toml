@@ -1,6 +1,6 @@
 [package]
 name = "tm040040"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Ralf Grubenmann <ralf.grubenmann@protonmail.com>"]
 description = "An embedded-hal driver for the TM040040 Cirque Circle touchpad (and Pinnacle touchpads in general)"
