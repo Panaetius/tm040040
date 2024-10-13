@@ -17,6 +17,7 @@ pub enum Mask {
     Write = 0x80,
 }
 
+/// i2c adress
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum Address {
     #[default]
@@ -24,10 +25,14 @@ pub enum Address {
     Secondary = 0x2c,
 }
 
+/// Touchpad power modes
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum PowerMode {
+    /// Shutdown touchpad. Consumes very low power, does not track touch
     Shutdown = 1,
+    /// Enable sleep mode. After 5 seconds of no touch, enter sleep mode. In sleep mode, only check for touch every 300ms. Only uses around 50µA of current.
     Sleep = 2,
+    /// Normal operation, switches between active and idle mode depending on touch. In idle state, checks for touch every 10ms.
     #[default]
     Normal = 0,
 }
@@ -52,11 +57,14 @@ impl TryFrom<u8> for PowerMode {
     }
 }
 
+/// Feed mode controls if position reporting is turned on or not.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum FeedMode {
+    /// Report finger tracking
     #[default]
     Enabled = 1,
+    /// Disable finger tracking and reporting
     NoFeed = 0,
 }
 impl Bitfield for FeedMode {
@@ -78,11 +86,15 @@ impl TryFrom<u8> for FeedMode {
     }
 }
 
+/// Position reporting mode
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum PositionMode {
+    /// Relative mode reports position deltas. Relative mode also allows using internal tap detection, scroll detection and extended features (controlled by other flags).
     #[default]
     Relative = 0,
+    /// Absolute position reporting mode. Position is x in range 0 - 2047 and y in 0 - 1535. Distance of finger to touchpad is reported as z level, with 0 being no
+    /// finger detected, and values increasing as finger approaches. It is up to the caller to detect touches and taps.
     Absolute = 1,
 }
 impl Bitfield for PositionMode {
@@ -104,6 +116,7 @@ impl TryFrom<u8> for PositionMode {
     }
 }
 
+/// Enable or disable hardware filters. Cirque does not reccommend disabling filters.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum FilterMode {
@@ -130,6 +143,7 @@ impl TryFrom<u8> for FilterMode {
     }
 }
 
+/// Disable specific axis.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum XYEnable {
@@ -160,6 +174,7 @@ impl TryFrom<u8> for XYEnable {
     }
 }
 
+/// Invert axis reporting (flips sign).
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum XYInverted {
@@ -190,6 +205,7 @@ impl TryFrom<u8> for XYInverted {
     }
 }
 
+/// Intelli mouse mode controlls scroll reporting.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum IntelliMouseMode {
@@ -216,12 +232,16 @@ impl TryFrom<u8> for IntelliMouseMode {
     }
 }
 
+/// Handle what types of taps are detected by hardware.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum TapMode {
+    /// Detect all kinds of taps
     #[default]
     Enabled = 0,
+    /// Don't detect taps
     AllTapsDisable = 1,
+    /// Dont detect secondary button taps. Secondary taps are taps in the upper right corner of the touchpad
     SecondaryTapDisable = 2,
 }
 impl Bitfield for TapMode {
@@ -244,6 +264,7 @@ impl TryFrom<u8> for TapMode {
     }
 }
 
+/// Control scroll mode. Cirque docs don't say what this actually does.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum ScrollMode {
@@ -270,6 +291,7 @@ impl TryFrom<u8> for ScrollMode {
     }
 }
 
+/// Control glide extend mode. In glide extend mode, drag actions can be extended by lifting the finger when an edge is reached and repositioning the finger.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum GlideExtendMode {
@@ -296,6 +318,7 @@ impl TryFrom<u8> for GlideExtendMode {
     }
 }
 
+/// Swap X and Y axis.
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum XYSwapped {
