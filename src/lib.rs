@@ -149,7 +149,7 @@ where
 
     /// Set the power mode
     pub fn set_power_mode(&mut self, power_mode: PowerMode) -> Result<(), Error<E>> {
-        self.write_reg(&Bank0::SYS_CONFIG1, power_mode as u8)
+        self.update_reg(power_mode)
     }
 
     /// Get the current feed mode

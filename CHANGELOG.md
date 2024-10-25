@@ -1,6 +1,17 @@
 # Changelog
 
-## tm040040 [0.2.0](https://github.com/Panaetius/tm040040/tree/0.2.0) (2024-10-4)
+
+## tm040040 [0.2.2](https://github.com/Panaetius/tm040040/tree/0.2.2) (2024-10-25)
+
+### Added
+
+### Changed
+
+### Fixed
+
+- fixed setting power mode to use `update_reg`
+
+## tm040040 [0.2.0](https://github.com/Panaetius/tm040040/tree/0.2.0) (2024-10-04)
 
 ### Added
 
@@ -11,7 +22,7 @@
 
 ### Fixed
 
-## tm040040 [0.1.0](https://github.com/Panaetius/tm040040/tree/0.1.0) (2024-10-4)
+## tm040040 [0.1.0](https://github.com/Panaetius/tm040040/tree/0.1.0) (2024-10-04)
 
 ### Added
 
