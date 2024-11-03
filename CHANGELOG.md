@@ -1,5 +1,17 @@
 # Changelog
 
+## tm040040 [0.3.0](https://github.com/Panaetius/tm040040/tree/0.3.0) (2024-11-3)
+
+### Added
+
+Added check of hardware ready signal fo check if there's data to read.
+This fixes trying to read in sleep mode where there won't be any i2c response if there's no data, 
+which causes an error.
+
+### Changed
+
+### Fixed
+
 
 ## tm040040 [0.2.2](https://github.com/Panaetius/tm040040/tree/0.2.2) (2024-10-25)
 
