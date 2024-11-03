@@ -44,7 +44,10 @@
 use core::{fmt::Debug, marker::PhantomData};
 
 use config::{Bitfield, Mask};
-use embedded_hal::i2c::I2c;
+use embedded_hal::{
+    digital::{self, InputPin},
+    i2c::I2c,
+};
 
 use crate::register::{Bank0, Register};
 pub use crate::{
@@ -114,20 +117,21 @@ impl private::Sealed for Relative {}
 impl PositionReportingMode for Absolute {}
 impl private::Sealed for Absolute {}
 
-#[derive(Debug, Clone, Copy)]
-pub struct Tm040040<I2C, PositionMode: PositionReportingMode, Feed: FeedState> {
+pub struct Tm040040<'a, I2C, PositionMode: PositionReportingMode, Feed: FeedState, E> {
     i2c: I2C,
     address: Address,
+    hardware_data_ready: &'a mut dyn InputPin<Error = E>,
     _pos_state: PhantomData<PositionMode>,
     _feed_state: PhantomData<Feed>,
 }
 
-impl<I2C, E, PosMode, Feed> Tm040040<I2C, PosMode, Feed>
+impl<I2C, E, PosMode, Feed, PinError> Tm040040<'_, I2C, PosMode, Feed, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
     PosMode: PositionReportingMode,
     Feed: FeedState,
+    PinError: digital::Error,
 {
     /// Return the underlying I2C instance for reuse
     pub fn free(self) -> I2C {
@@ -135,12 +139,12 @@ where
     }
 
     /// Get the device/firmware ID of the touchpad
-    pub fn device_id(&mut self) -> Result<u8, Error<E>> {
+    pub fn device_id(&mut self) -> Result<u8, Error<E, PinError>> {
         self.read_reg(&Bank0::FIRMWARE_ID)
     }
 
     /// Get the currently configured power mode
-    pub fn power_mode(&mut self) -> Result<PowerMode, Error<E>> {
+    pub fn power_mode(&mut self) -> Result<PowerMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::SYS_CONFIG1)? >> 1;
         let mode = PowerMode::try_from(bits)?;
 
@@ -148,12 +152,12 @@ where
     }
 
     /// Set the power mode
-    pub fn set_power_mode(&mut self, power_mode: PowerMode) -> Result<(), Error<E>> {
+    pub fn set_power_mode(&mut self, power_mode: PowerMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(power_mode)
     }
 
     /// Get the current feed mode
-    pub fn feed_mode(&mut self) -> Result<FeedMode, Error<E>> {
+    pub fn feed_mode(&mut self) -> Result<FeedMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & FeedMode::BITMASK;
         let mode = FeedMode::try_from(bits)?;
 
@@ -161,12 +165,12 @@ where
     }
 
     /// Set the feed mode, enabling or disabling position reporting
-    fn set_feed_mode(&mut self, fd: FeedMode) -> Result<(), Error<E>> {
+    fn set_feed_mode(&mut self, fd: FeedMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(fd)
     }
 
     /// Get the current position reporting mode
-    pub fn position_mode(&mut self) -> Result<PositionMode, Error<E>> {
+    pub fn position_mode(&mut self) -> Result<PositionMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & PositionMode::BITMASK;
         let mode = PositionMode::try_from(bits)?;
 
@@ -174,12 +178,12 @@ where
     }
 
     /// Set the current position reporting mode (Absolute or Relative coordinates)
-    fn set_position_mode(&mut self, pos: PositionMode) -> Result<(), Error<E>> {
+    fn set_position_mode(&mut self, pos: PositionMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(pos)
     }
 
     /// Get the current filter mode
-    pub fn filter_mode(&mut self) -> Result<FilterMode, Error<E>> {
+    pub fn filter_mode(&mut self) -> Result<FilterMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & FilterMode::BITMASK;
         let mode = FilterMode::try_from(bits)?;
 
@@ -187,12 +191,12 @@ where
     }
 
     ///Set the hardware filter mode
-    pub fn set_filter_mode(&mut self, filter: FilterMode) -> Result<(), Error<E>> {
+    pub fn set_filter_mode(&mut self, filter: FilterMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(filter)
     }
 
     /// Get enabled axis
-    pub fn xy_enable(&mut self) -> Result<XYEnable, Error<E>> {
+    pub fn xy_enable(&mut self) -> Result<XYEnable, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & XYEnable::BITMASK;
         let mode = XYEnable::try_from(bits)?;
 
@@ -200,12 +204,12 @@ where
     }
 
     /// Set enabled axis
-    pub fn set_xy_enable(&mut self, yx: XYEnable) -> Result<(), Error<E>> {
+    pub fn set_xy_enable(&mut self, yx: XYEnable) -> Result<(), Error<E, PinError>> {
         self.update_reg(yx)
     }
 
     /// Get axis inversion setting
-    pub fn xy_inverted(&mut self) -> Result<XYInverted, Error<E>> {
+    pub fn xy_inverted(&mut self) -> Result<XYInverted, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & XYInverted::BITMASK;
         let mode = XYInverted::try_from(bits)?;
 
@@ -213,12 +217,12 @@ where
     }
 
     /// Invert axis
-    pub fn set_xy_inverted(&mut self, yx: XYInverted) -> Result<(), Error<E>> {
+    pub fn set_xy_inverted(&mut self, yx: XYInverted) -> Result<(), Error<E, PinError>> {
         self.update_reg(yx)
     }
 
     /// Read the value of a register
-    fn read_reg<R: Register>(&mut self, reg: &R) -> Result<u8, Error<E>> {
+    fn read_reg<R: Register>(&mut self, reg: &R) -> Result<u8, Error<E, PinError>> {
         let mut buffer = [0u8];
 
         self.i2c
@@ -233,7 +237,7 @@ where
     }
 
     /// Write a value to a register
-    fn write_reg<R: Register>(&mut self, reg: &R, value: u8) -> Result<(), Error<E>> {
+    fn write_reg<R: Register>(&mut self, reg: &R, value: u8) -> Result<(), Error<E, PinError>> {
         if reg.read_only() {
             Err(Error::SensorError(error::SensorError::WriteToReadOnly))
         } else {
@@ -244,7 +248,7 @@ where
     }
 
     /// Update specific bits of a register
-    fn update_reg<BF: Bitfield>(&mut self, value: BF) -> Result<(), Error<E>> {
+    fn update_reg<BF: Bitfield>(&mut self, value: BF) -> Result<(), Error<E, PinError>> {
         if BF::REGISTER.read_only() {
             Err(Error::SensorError(error::SensorError::WriteToReadOnly))
         } else {
@@ -256,34 +260,45 @@ where
 
     /// Clears the status flags.
     /// This needs to be called after reading a position, otherwise no new position data is reported
-    fn clear_flags(&mut self) -> Result<(), Error<E>> {
+    fn clear_flags(&mut self) -> Result<(), Error<E, PinError>> {
         self.write_reg(&Bank0::STATUS1, 0x00)
     }
 }
-impl<I2C, E> Tm040040<I2C, Relative, NoFeed>
+impl<'a, I2C, E, PinError> Tm040040<'a, I2C, Relative, NoFeed, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
+    PinError: digital::Error,
 {
     //! Create a new trackpad instance.
-    pub fn new(i2c: I2C, address: Address) -> Tm040040<I2C, Relative, NoFeed> {
-        Tm040040::<I2C, Relative, NoFeed> {
+    pub fn new(
+        i2c: I2C,
+        address: Address,
+        hardware_data_ready: &'a mut impl InputPin<Error = PinError>,
+    ) -> Tm040040<'a, I2C, Relative, NoFeed, PinError> {
+        Tm040040::<'a, I2C, Relative, NoFeed, PinError> {
             i2c,
             address,
+            hardware_data_ready,
             _pos_state: PhantomData,
             _feed_state: PhantomData,
         }
     }
 }
 
-impl<I2C, E> Tm040040<I2C, Relative, FeedEnabled>
+impl<'a, I2C, E, PinError> Tm040040<'a, I2C, Relative, FeedEnabled, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
+    PinError: digital::Error,
 {
     /// Read touchpad output as relative data (delta X and Y) plus button presses
     /// `None` if the touchpad isn't being touched.
-    pub fn relative_data(&mut self) -> Result<Option<RelativeData>, Error<E>> {
+    pub fn relative_data(&mut self) -> Result<Option<RelativeData>, Error<E, PinError>> {
+        let hw_dr = self.hardware_data_ready.is_high()?;
+        if !hw_dr {
+            return Ok(None);
+        }
         let sw_dr = self.read_reg(&Bank0::STATUS1)? & 0b0000_0100;
 
         if sw_dr == 0 {
@@ -324,26 +339,30 @@ where
     }
 
     /// Switch to absolute position mode
-    pub fn absolute(mut self) -> Result<Tm040040<I2C, Absolute, FeedEnabled>, Error<E>> {
+    pub fn absolute(
+        mut self,
+    ) -> Result<Tm040040<'a, I2C, Absolute, FeedEnabled, PinError>, Error<E, PinError>> {
         self.set_position_mode(PositionMode::Absolute)?;
 
         Ok(Tm040040 {
             i2c: self.i2c,
             address: self.address,
+            hardware_data_ready: self.hardware_data_ready,
             _pos_state: PhantomData,
             _feed_state: PhantomData,
         })
     }
 }
 
-impl<I2C, E, Feed> Tm040040<I2C, Relative, Feed>
+impl<I2C, E, Feed, PinError> Tm040040<'_, I2C, Relative, Feed, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
     Feed: FeedState,
+    PinError: digital::Error,
 {
     /// Get axis swap state
-    pub fn xy_swapped(&mut self) -> Result<XYSwapped, Error<E>> {
+    pub fn xy_swapped(&mut self) -> Result<XYSwapped, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & XYSwapped::BITMASK;
         let mode = XYSwapped::try_from(bits)?;
 
@@ -351,12 +370,12 @@ where
     }
 
     /// Swap X/Y axis
-    pub fn set_xy_swapped(&mut self, yx: XYSwapped) -> Result<(), Error<E>> {
+    pub fn set_xy_swapped(&mut self, yx: XYSwapped) -> Result<(), Error<E, PinError>> {
         self.update_reg(yx)
     }
 
     /// Get Intelli mouse config
-    pub fn intelli_mouse(&mut self) -> Result<IntelliMouseMode, Error<E>> {
+    pub fn intelli_mouse(&mut self) -> Result<IntelliMouseMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & IntelliMouseMode::BITMASK;
         let mode = IntelliMouseMode::try_from(bits)?;
 
@@ -365,12 +384,12 @@ where
 
     /// Set Intelli Mouse setting
     /// When enabled, reports back scroll position in relative mode (if supported)
-    pub fn set_intelli_mouse(&mut self, im: IntelliMouseMode) -> Result<(), Error<E>> {
+    pub fn set_intelli_mouse(&mut self, im: IntelliMouseMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(im)
     }
 
     /// Get tap detection mode
-    pub fn tap_mode(&mut self) -> Result<TapMode, Error<E>> {
+    pub fn tap_mode(&mut self) -> Result<TapMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & TapMode::BITMASK;
         let mode = TapMode::try_from(bits)?;
 
@@ -378,12 +397,12 @@ where
     }
 
     /// Set tap detection mode
-    pub fn set_tap_mode(&mut self, tm: TapMode) -> Result<(), Error<E>> {
+    pub fn set_tap_mode(&mut self, tm: TapMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(tm)
     }
 
     /// Get scroll mode
-    pub fn scroll_mode(&mut self) -> Result<ScrollMode, Error<E>> {
+    pub fn scroll_mode(&mut self) -> Result<ScrollMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & ScrollMode::BITMASK;
         let mode = ScrollMode::try_from(bits)?;
 
@@ -391,12 +410,12 @@ where
     }
 
     /// Enable/disable scroll data
-    pub fn set_scroll_mode(&mut self, sm: ScrollMode) -> Result<(), Error<E>> {
+    pub fn set_scroll_mode(&mut self, sm: ScrollMode) -> Result<(), Error<E, PinError>> {
         self.update_reg(sm)
     }
 
     /// Get Glide extend config
-    pub fn glide_extend_mode(&mut self) -> Result<GlideExtendMode, Error<E>> {
+    pub fn glide_extend_mode(&mut self) -> Result<GlideExtendMode, Error<E, PinError>> {
         let bits = self.read_reg(&Bank0::FEED_CONFIG1)? & GlideExtendMode::BITMASK;
         let mode = GlideExtendMode::try_from(bits)?;
 
@@ -405,19 +424,27 @@ where
 
     /// Set Glide extend config
     /// This allows continuing drag operations when the edge is reached by lifting and repositioning the finger
-    pub fn set_glide_extend_mode(&mut self, gem: GlideExtendMode) -> Result<(), Error<E>> {
+    pub fn set_glide_extend_mode(
+        &mut self,
+        gem: GlideExtendMode,
+    ) -> Result<(), Error<E, PinError>> {
         self.update_reg(gem)
     }
 }
 
-impl<I2C, E> Tm040040<I2C, Absolute, FeedEnabled>
+impl<'a, I2C, E, PinError> Tm040040<'a, I2C, Absolute, FeedEnabled, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
+    PinError: digital::Error,
 {
     /// Read touchpad output (X/Y/Z position and button presses) in absolute mode
     /// Output is clipped to min/max usable position on the trackpad
-    pub fn absolute_data(&mut self) -> Result<AbsoluteData, Error<E>> {
+    pub fn absolute_data(&mut self) -> Result<Option<AbsoluteData>, Error<E, PinError>> {
+        let hw_dr = self.hardware_data_ready.is_high()?;
+        if !hw_dr {
+            return Ok(None);
+        }
         let button_state = self.read_reg(&Bank0::PACKET_BYTE0)? & 0x3F;
         let x_low = self.read_reg(&Bank0::PACKET_BYTE2)?;
         let y_low = self.read_reg(&Bank0::PACKET_BYTE3)?;
@@ -428,60 +455,71 @@ where
 
         self.clear_flags()?;
 
-        Ok(AbsoluteData {
+        Ok(Some(AbsoluteData {
             button_state,
             x_pos: x_pos.max(PINNACLE_X_UPPER).min(PINNACLE_X_LOWER),
             y_pos: y_pos.max(PINNACLE_Y_UPPER).min(PINNACLE_Y_LOWER),
             z_level,
-        })
+        }))
     }
 
     /// Switch to relative position mode
-    pub fn relative(mut self) -> Result<Tm040040<I2C, Relative, FeedEnabled>, Error<E>> {
+    pub fn relative(
+        mut self,
+    ) -> Result<Tm040040<'a, I2C, Relative, FeedEnabled, PinError>, Error<E, PinError>> {
         self.set_position_mode(PositionMode::Relative)?;
 
         Ok(Tm040040 {
             i2c: self.i2c,
             address: self.address,
+            hardware_data_ready: self.hardware_data_ready,
             _pos_state: PhantomData,
             _feed_state: PhantomData,
         })
     }
 }
 
-impl<I2C, E, PosMode> Tm040040<I2C, PosMode, FeedEnabled>
+impl<'a, I2C, E, PosMode, PinError> Tm040040<'a, I2C, PosMode, FeedEnabled, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
     PosMode: PositionReportingMode,
+    PinError: digital::Error,
 {
     /// Disable feed, no new data will be collected from sensor
-    pub fn disable(mut self) -> Result<Tm040040<I2C, PosMode, NoFeed>, Error<E>> {
+    pub fn disable(
+        mut self,
+    ) -> Result<Tm040040<'a, I2C, PosMode, NoFeed, PinError>, Error<E, PinError>> {
         self.set_feed_mode(FeedMode::NoFeed)?;
 
         Ok(Tm040040 {
             i2c: self.i2c,
             address: self.address,
+            hardware_data_ready: self.hardware_data_ready,
             _pos_state: PhantomData,
             _feed_state: PhantomData,
         })
     }
 }
 
-impl<I2C, E, PosMode> Tm040040<I2C, PosMode, NoFeed>
+impl<'a, I2C, E, PosMode, PinError> Tm040040<'a, I2C, PosMode, NoFeed, PinError>
 where
     I2C: I2c<Error = E>,
     E: Debug,
     PosMode: PositionReportingMode,
+    PinError: digital::Error,
 {
     /// enable feed, sensor starts collecting data
-    pub fn enable(mut self) -> Result<Tm040040<I2C, PosMode, FeedEnabled>, Error<E>> {
+    pub fn enable(
+        mut self,
+    ) -> Result<Tm040040<'a, I2C, PosMode, FeedEnabled, PinError>, Error<E, PinError>> {
         self.set_feed_mode(FeedMode::Enabled)?;
         self.clear_flags()?;
 
         Ok(Tm040040 {
             i2c: self.i2c,
             address: self.address,
+            hardware_data_ready: self.hardware_data_ready,
             _pos_state: PhantomData,
             _feed_state: PhantomData,
         })

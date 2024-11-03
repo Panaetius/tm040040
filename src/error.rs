@@ -1,9 +1,14 @@
+use core::fmt::Debug;
+
+use embedded_hal::digital;
+
 #[derive(Debug)]
-pub enum Error<E> {
+pub enum Error<E, PE> {
     /// Some error originating from the communication bus
     BusError(E),
     /// Some error resulting from interacting with the device
     SensorError(SensorError),
+    PinError(PE),
 }
 
 #[derive(Debug)]
@@ -25,8 +30,17 @@ pub enum SensorError {
     InvalidDiscriminant,
 }
 
-impl<E> From<SensorError> for Error<E> {
+impl<E, PE> From<SensorError> for Error<E, PE> {
     fn from(err: SensorError) -> Self {
         Error::SensorError(err)
+    }
+}
+
+impl<E, PE> From<PE> for Error<E, PE>
+where
+    PE: digital::Error + Debug,
+{
+    fn from(value: PE) -> Self {
+        Error::PinError(value)
     }
 }
